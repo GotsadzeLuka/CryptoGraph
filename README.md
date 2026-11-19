@@ -26,6 +26,15 @@ CryptoGraph is a web-based learning tool for comparing historical ciphers with m
 
 **Key safety:** Caesar and Vigenère are intentionally insecure teaching examples. RSA keys are 2048–4096 bits, with disposable test keys recommended. The application does not offer end-to-end or zero-knowledge encryption.
 
+
+## Input-validation and resource limits (draft hardening PR)
+
+Classical ciphers handle non-Latin text deterministically without indexing errors, and reject ambiguous custom alphabets and non-ASCII Vigenère keywords. RSA endpoints reject wrong key types and malformed Base64 with controlled errors. Valid but incorrect RSA signatures return `valid=false`; unparseable signatures are rejected. RSA work is offloaded to a threadpool with a per-process, two-operation concurrency bound, and private-key-sensitive API responses disable caching.
+
+Text, key, alphabet and ciphertext fields have documented Pydantic limits; the app enforces a 10 MiB per-file read cap. The header-based request-size guard is **not** a complete streaming-body cap; public deployment also requires TLS, a reverse-proxy hard body limit, quotas and authenticated/rate-limited access. See [security boundaries](docs/SECURITY_BOUNDARIES.md).
+
+Direct Python dependencies are pinned and CI now includes Ruff and pip-audit, but a **full hashed transitive lock remains pending**. Python 3.12 and 3.13 test runs must be observed to complete; GitHub-hosted jobs are currently failing before executing steps. The educational demo remains offline and cannot be described as a secure production cryptographic service.
+
 ## Quick start
 
 Requires **Python 3.12+**. No database, cloud account or environment secrets are needed for local development.
