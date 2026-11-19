@@ -9,3 +9,7 @@ CryptoGraph is an **educational cryptography API**, not a key-management or secu
 - Text endpoints limit fields to 65,536 Unicode characters, keywords to 128 and custom alphabets to 256. Key/encoded-ciphertext fields are bounded. File handlers enforce a 10 MiB per-file read limit. Declared Content-Length over the request limit is rejected early. Streaming clients can bypass the Content-Length check; deploy with a strict reverse-proxy request-body limit, upload concurrency quota, edge rate limiting, TLS and instance-level CPU/memory limits. Sensitive crypto responses set no-store.
 - Private keys are returned in plaintext only because the project demonstrates local RSA key generation. Do not transmit real production private keys to this API or log/store them.
 - CI results must be confirmed from completed GitHub Actions jobs, not inferred from workflow YAML.
+
+## Dependency supply chain
+
+`requirements.txt` pins the direct dependency set and removes unused PyCryptodome. CI performs dependency consistency and installed-environment vulnerability scanning. This is **not yet a fully hashed transitive lock**; the complete dependency graph must be resolved in a clean networked environment for both Python versions and committed only after verification.

@@ -26,6 +26,10 @@ jobs:
         run: python -m pip install -r requirements.txt
       - name: Check dependency consistency
         run: python -m pip check
+      - name: Scan installed dependency set for known vulnerabilities
+        run: |
+          python -m pip install pip-audit==2.9.0
+          python -m pip_audit
       - name: Check Python syntax
         run: python -m compileall -q app main.py
       - name: Lint errors and undefined names
