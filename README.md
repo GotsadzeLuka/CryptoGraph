@@ -4,13 +4,14 @@
 
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/API-FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![CI](https://github.com/GotsadzeLuka/CryptoGraph/actions/workflows/ci.yml/badge.svg)](https://github.com/GotsadzeLuka/CryptoGraph/actions/workflows/ci.yml)
 
 > **Educational project, not a secure vault or production key-management service.** Data you enter, including private PEM keys during signing or decryption, is sent to the API server. Never submit real private keys, credentials or confidential files to a hosted demo.
 
 CryptoGraph is a web-based learning tool for comparing historical ciphers with modern hashing, public-key encryption and digital signatures. Built for university **Security & Cryptography** and **Web Services and Design** coursework, it includes an independently accessible REST API, custom browser UI, Docker support and Python tests.
 
 ![CryptoGraph hero illustration](static/images/cryptograph-hero.png)
+
+**Reviewer shortcut:** [5-minute walkthrough](docs/REVIEWER_GUIDE.md) · [API endpoints](docs/API.md) · [Architecture](docs/ARCHITECTURE.md) · [Security model](SECURITY.md)
 
 ## Engineering overview
 
