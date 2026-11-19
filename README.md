@@ -104,7 +104,7 @@ docker build -t cryptograph .
 docker run --rm -p 8000:8000 cryptograph
 ```
 
-`render.yaml` is included as a deployment *configuration example*. A currently running hosted deployment is **not verified**; local startup is the recommended way to review the project. The unauthenticated API requires more hardening before public production use.
+**Hosted demo status: offline.** The former Vercel deployment is no longer available. Reviewers should run CryptoGraph locally using the Quick Start or Docker instructions above; there is no active public demo URL. `render.yaml` is retained only as an optional deployment configuration example. The unauthenticated API requires additional hardening before any public production use.
 
 ## Documentation for reviewers
 

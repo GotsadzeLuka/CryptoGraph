@@ -15,7 +15,9 @@ python -m pip install -r requirements.txt
 python -m uvicorn main:app --reload
 ```
 
-UI: `http://localhost:8000/` · Swagger: `http://localhost:8000/docs`.
+**Hosted demo: offline (former Vercel instance discontinued).** Run the commands above to review locally.
+
+Local UI: `http://localhost:8000/` · Local Swagger: `http://localhost:8000/docs`.
 
 ## Minutes 2–3 — Three demonstrations
 
