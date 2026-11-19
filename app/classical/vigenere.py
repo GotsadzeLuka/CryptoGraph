@@ -91,7 +91,7 @@ def _validate_keyword(keyword: str) -> None:
     """
     if not keyword:
         raise ValueError("Keyword must not be empty.")
-    if not keyword.isalpha():
+    if not all(char in ALPHABET or char in ALPHABET.upper() for char in keyword):
         raise ValueError(
             f"Keyword must contain only letters, got: '{keyword}'"
         )
@@ -118,7 +118,7 @@ def _apply_vigenere(text: str, keyword: str, encrypt_mode: bool) -> str:
     key_index = 0  # Tracks position in the keyword
 
     for char in text:
-        if char.isalpha():
+        if char in ALPHABET or char in ALPHABET.upper():
             # Get the shift from the current keyword letter
             shift = ALPHABET.index(keyword[key_index % key_len])
 

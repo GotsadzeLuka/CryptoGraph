@@ -7,6 +7,7 @@ Files are processed in memory with a 10 MiB per-request upload cap and are not s
 """
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from starlette.concurrency import run_in_threadpool
 
 from app.api.schemas import CryptoResponse, VerifyResponse
 from app.modern import hashing, signatures
@@ -53,7 +54,7 @@ async def sign_file(
         raise HTTPException(status_code=413, detail=str(exc)) from exc
 
     try:
-        result = signatures.sign_data(file_bytes, private_key)
+        result = await run_in_threadpool(signatures.sign_data, file_bytes, private_key)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -83,7 +84,7 @@ async def verify_file(
         raise HTTPException(status_code=413, detail=str(exc)) from exc
 
     try:
-        valid = signatures.verify_signature(file_bytes, signature, public_key)
+        valid = await run_in_threadpool(signatures.verify_signature, file_bytes, signature, public_key)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

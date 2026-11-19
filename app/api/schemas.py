@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 
 class CaesarRequest(BaseModel):
     """Request body for Caesar cipher encrypt/decrypt operations."""
-    text: str = Field(..., description="The text to encrypt or decrypt")
+    text: str = Field(..., max_length=65536, description="The text to encrypt or decrypt")
     shift: int = Field(default=3, description="Number of positions to shift (default: 3)")
     alphabet: str | None = Field(
         default=None,
@@ -24,7 +24,7 @@ class CaesarRequest(BaseModel):
 
 class VigenereRequest(BaseModel):
     """Request body for Vigenère cipher encrypt/decrypt operations."""
-    text: str = Field(..., description="The text to encrypt or decrypt")
+    text: str = Field(..., max_length=65536, description="The text to encrypt or decrypt")
     keyword: str = Field(
         default="cryptolab",
         description="The keyword for encryption (default: 'cryptolab')"
@@ -37,7 +37,7 @@ class VigenereRequest(BaseModel):
 
 class HashRequest(BaseModel):
     """Request body for SHA-256 text hashing."""
-    text: str = Field(..., description="The text to hash")
+    text: str = Field(..., max_length=65536, description="The text to hash")
 
 
 class RSAGenerateRequest(BaseModel):
@@ -52,7 +52,7 @@ class RSAGenerateRequest(BaseModel):
 
 class RSAEncryptRequest(BaseModel):
     """Request body for RSA encryption."""
-    text: str = Field(..., description="The plaintext to encrypt")
+    text: str = Field(..., max_length=65536, description="The plaintext to encrypt")
     public_key: str = Field(..., description="RSA public key in PEM format")
 
 
@@ -64,13 +64,13 @@ class RSADecryptRequest(BaseModel):
 
 class SignTextRequest(BaseModel):
     """Request body for signing text with RSA."""
-    text: str = Field(..., description="The text to sign")
+    text: str = Field(..., max_length=65536, description="The text to sign")
     private_key: str = Field(..., description="RSA private key in PEM format")
 
 
 class VerifyTextRequest(BaseModel):
     """Request body for verifying a text signature."""
-    text: str = Field(..., description="The original text that was signed")
+    text: str = Field(..., max_length=65536, description="The original text that was signed")
     signature: str = Field(..., description="Base64-encoded signature")
     public_key: str = Field(..., description="RSA public key in PEM format")
 

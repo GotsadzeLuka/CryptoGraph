@@ -16,6 +16,22 @@ Features:
 DEFAULT_ALPHABET = "abcdefghijklmnopqrstuvwxyz"
 
 
+def _normalize_alphabet(alphabet: str | None) -> str:
+    """Require unique, single-codepoint cased letters for a reversible alphabet."""
+    if alphabet is None:
+        return DEFAULT_ALPHABET
+    if not alphabet or not alphabet.isalpha():
+        raise ValueError("Custom alphabet must contain only letters and must not be empty.")
+    lowered = alphabet.lower()
+    if len(lowered) != len(alphabet) or any(
+        len(char.upper()) != 1 or len(char.lower()) != 1 for char in alphabet
+    ):
+        raise ValueError("Custom alphabet must use one-to-one case mappings.")
+    if len(set(lowered)) != len(lowered):
+        raise ValueError("Custom alphabet contains repeated letters (case-insensitive).")
+    return lowered
+
+
 def encrypt(text: str, shift: int = 3, alphabet: str | None = None) -> str:
     """
     Encrypt plaintext using the Caesar cipher.
@@ -41,7 +57,7 @@ def encrypt(text: str, shift: int = 3, alphabet: str | None = None) -> str:
         >>> encrypt("xyz", shift=3)
         'abc'
     """
-    alpha = (alphabet or DEFAULT_ALPHABET).lower()
+    alpha = _normalize_alphabet(alphabet)
     return _apply_shift(text, shift, alpha)
 
 
@@ -67,7 +83,7 @@ def decrypt(text: str, shift: int = 3, alphabet: str | None = None) -> str:
         >>> decrypt("bcd", shift=1)
         'abc'
     """
-    alpha = (alphabet or DEFAULT_ALPHABET).lower()
+    alpha = _normalize_alphabet(alphabet)
     return _apply_shift(text, -shift, alpha)
 
 

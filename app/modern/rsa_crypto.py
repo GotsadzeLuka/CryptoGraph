@@ -15,6 +15,7 @@ Security notes:
 """
 
 import base64
+import binascii
 
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
@@ -108,6 +109,11 @@ def encrypt(plaintext: str, public_key_pem: str) -> str:
     except Exception as e:
         raise ValueError(f"Invalid public key PEM: {e}") from e
 
+    if not isinstance(public_key, rsa.RSAPublicKey) or not (
+        MIN_KEY_SIZE <= public_key.key_size <= MAX_KEY_SIZE
+    ):
+        raise ValueError("A 2048–4096 bit RSA public key is required.")
+
     plaintext_bytes = plaintext.encode("utf-8")
 
     # Check if plaintext fits within key constraints
@@ -158,10 +164,17 @@ def decrypt(ciphertext_b64: str, private_key_pem: str) -> str:
     except Exception as e:
         raise ValueError(f"Invalid private key PEM: {e}") from e
 
+    if not isinstance(private_key, rsa.RSAPrivateKey) or not (
+        MIN_KEY_SIZE <= private_key.key_size <= MAX_KEY_SIZE
+    ):
+        raise ValueError("A 2048–4096 bit RSA private key is required.")
+
     try:
-        ciphertext = base64.b64decode(ciphertext_b64)
-    except Exception as e:
-        raise ValueError(f"Invalid base64 ciphertext: {e}") from e
+        ciphertext = base64.b64decode(ciphertext_b64, validate=True)
+    except (binascii.Error, ValueError) as exc:
+        raise ValueError("Invalid base64 ciphertext.") from exc
+    if len(ciphertext) != private_key.key_size // 8:
+        raise ValueError("Ciphertext length does not match the RSA key.")
 
     try:
         plaintext_bytes = private_key.decrypt(
@@ -172,7 +185,10 @@ def decrypt(ciphertext_b64: str, private_key_pem: str) -> str:
                 label=None,
             ),
         )
-    except Exception as e:
-        raise ValueError(f"Decryption failed: {e}") from e
+    except ValueError as exc:
+        raise ValueError("Decryption failed (wrong key or corrupted ciphertext).") from exc
 
-    return plaintext_bytes.decode("utf-8")
+    try:
+        return plaintext_bytes.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError("Decrypted plaintext is not valid UTF-8.") from exc
