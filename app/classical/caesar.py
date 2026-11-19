@@ -27,6 +27,11 @@ def _normalize_alphabet(alphabet: str | None) -> str:
         len(char.upper()) != 1 or len(char.lower()) != 1 for char in alphabet
     ):
         raise ValueError("Custom alphabet must use one-to-one case mappings.")
+    # Some Unicode letters (for example Greek final sigma) have single-codepoint
+    # case mappings but do not survive an upper/lower round trip. Reject these
+    # ambiguous alphabet entries rather than silently corrupting ciphertext.
+    if any(char.upper().lower() != char for char in lowered):
+        raise ValueError("Custom alphabet contains ambiguous Unicode case mappings.")
     if len(set(lowered)) != len(lowered):
         raise ValueError("Custom alphabet contains repeated letters (case-insensitive).")
     return lowered

@@ -1,6 +1,6 @@
 """Security boundary regressions on real FastAPI routes."""
 import asyncio
-from threading import Event
+from threading import Event, Lock
 
 import pytest
 from fastapi import HTTPException
@@ -48,13 +48,22 @@ def test_known_answer_vectors():
 
 def test_crypto_admission_control_refuses_overloaded_worker():
     async def scenario():
-        blocked = Event()
+        blocked, started = Event(), Event()
+        lock = Lock()
+        count = 0
+
         def expensive():
+            nonlocal count
+            with lock:
+                count += 1
+                if count == 2:
+                    started.set()
             blocked.wait(4)
+
         first = asyncio.create_task(run_limited_crypto(expensive))
         second = asyncio.create_task(run_limited_crypto(expensive))
         try:
-            await asyncio.sleep(0.1)
+            assert await asyncio.to_thread(started.wait, 2), "Both crypto slots must be occupied"
             with pytest.raises(HTTPException) as exc:
                 await run_limited_crypto(expensive)
             assert exc.value.status_code == 429

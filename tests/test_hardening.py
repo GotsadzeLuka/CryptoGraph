@@ -40,10 +40,16 @@ def test_vigenere_rejects_non_ascii_keywords(keyword):
         vigenere.encrypt("hello", keyword)
 
 
-@pytest.mark.parametrize("alphabet", ["", "aab", "Aa", "ab1", "a!", "aß"])
+@pytest.mark.parametrize("alphabet", ["", "aab", "Aa", "ab1", "a!", "aß", "aς", "aı"])
 def test_caesar_rejects_invalid_alphabets(alphabet):
     with pytest.raises(ValueError):
         caesar.encrypt("abc", alphabet=alphabet)
+
+
+def test_caesar_large_shift_and_unicode_roundtrip():
+    text = "Hello, 123! αβΓ"
+    for shift in (-10**24, -10**9, 0, 10**9, 10**24):
+        assert caesar.decrypt(caesar.encrypt(text, shift=shift), shift=shift) == text
 
 
 def test_custom_greek_alphabet():
