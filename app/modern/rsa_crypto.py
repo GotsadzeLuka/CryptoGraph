@@ -106,8 +106,8 @@ def encrypt(plaintext: str, public_key_pem: str) -> str:
         public_key = serialization.load_pem_public_key(
             public_key_pem.encode("utf-8")
         )
-    except Exception as e:
-        raise ValueError(f"Invalid public key PEM: {e}") from e
+    except (ValueError, TypeError) as exc:
+        raise ValueError("Invalid public key PEM.") from exc
 
     if not isinstance(public_key, rsa.RSAPublicKey) or not (
         MIN_KEY_SIZE <= public_key.key_size <= MAX_KEY_SIZE
@@ -161,8 +161,8 @@ def decrypt(ciphertext_b64: str, private_key_pem: str) -> str:
             private_key_pem.encode("utf-8"),
             password=None,
         )
-    except Exception as e:
-        raise ValueError(f"Invalid private key PEM: {e}") from e
+    except (ValueError, TypeError) as exc:
+        raise ValueError("Invalid private key PEM.") from exc
 
     if not isinstance(private_key, rsa.RSAPrivateKey) or not (
         MIN_KEY_SIZE <= private_key.key_size <= MAX_KEY_SIZE

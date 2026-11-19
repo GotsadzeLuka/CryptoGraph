@@ -26,7 +26,7 @@ async def caesar_encrypt(request: CaesarRequest) -> CryptoResponse:
             shift=request.shift,
             alphabet=request.alphabet,
         )
-    except Exception as e:
+    except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
     return CryptoResponse(
@@ -46,7 +46,7 @@ async def caesar_decrypt(request: CaesarRequest) -> CryptoResponse:
             shift=request.shift,
             alphabet=request.alphabet,
         )
-    except Exception as e:
+    except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
     return CryptoResponse(

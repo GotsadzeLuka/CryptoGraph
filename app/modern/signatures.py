@@ -51,8 +51,8 @@ def sign_data(data: bytes, private_key_pem: str) -> str:
             private_key_pem.encode("utf-8"),
             password=None,
         )
-    except Exception as e:
-        raise ValueError(f"Invalid private key PEM: {e}") from e
+    except (ValueError, TypeError) as exc:
+        raise ValueError("Invalid private key PEM.") from exc
 
     if not isinstance(private_key, rsa.RSAPrivateKey) or not 2048 <= private_key.key_size <= 4096:
         raise ValueError("A 2048-bit or stronger RSA private key is required.")
@@ -93,8 +93,8 @@ def verify_signature(
         public_key = serialization.load_pem_public_key(
             public_key_pem.encode("utf-8")
         )
-    except Exception as e:
-        raise ValueError(f"Invalid public key PEM: {e}") from e
+    except (ValueError, TypeError) as exc:
+        raise ValueError("Invalid public key PEM.") from exc
 
     if not isinstance(public_key, rsa.RSAPublicKey) or not 2048 <= public_key.key_size <= 4096:
         raise ValueError("A 2048-bit or stronger RSA public key is required.")
