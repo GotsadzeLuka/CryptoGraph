@@ -54,7 +54,7 @@ def sign_data(data: bytes, private_key_pem: str) -> str:
     except Exception as e:
         raise ValueError(f"Invalid private key PEM: {e}") from e
 
-    if not isinstance(private_key, rsa.RSAPrivateKey) or private_key.key_size < 2048:
+    if not isinstance(private_key, rsa.RSAPrivateKey) or not 2048 <= private_key.key_size <= 4096:
         raise ValueError("A 2048-bit or stronger RSA private key is required.")
 
     signature = private_key.sign(
@@ -96,7 +96,7 @@ def verify_signature(
     except Exception as e:
         raise ValueError(f"Invalid public key PEM: {e}") from e
 
-    if not isinstance(public_key, rsa.RSAPublicKey) or public_key.key_size < 2048:
+    if not isinstance(public_key, rsa.RSAPublicKey) or not 2048 <= public_key.key_size <= 4096:
         raise ValueError("A 2048-bit or stronger RSA public key is required.")
 
     try:

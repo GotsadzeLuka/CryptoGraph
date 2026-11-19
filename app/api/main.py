@@ -5,7 +5,8 @@ Creates and configures the CryptoGraph API application,
 including router registration and health check endpoint.
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 from app.api.routes_classical import router as classical_router
 from app.api.routes_modern import router as modern_router
@@ -30,6 +31,22 @@ def create_app() -> FastAPI:
         ),
         version="1.0.0",
     )
+
+    @app.middleware("http")
+    async def request_safety(request: Request, call_next):
+        # Enforce declared request size. A proxy must still cap chunked bodies.
+        length = request.headers.get("content-length")
+        if length is not None:
+            try:
+                if int(length) > 10 * 1024 * 1024 + 64 * 1024:
+                    return JSONResponse(status_code=413, content={"detail": "Request body exceeds the upload limit"})
+            except ValueError:
+                return JSONResponse(status_code=400, content={"detail": "Invalid Content-Length"})
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        if request.url.path.startswith("/api/modern/rsa/") or request.url.path.startswith("/api/files/"):
+            response.headers["Cache-Control"] = "no-store"
+        return response
 
     # Register API routers
     app.include_router(classical_router)

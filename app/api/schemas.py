@@ -15,9 +15,10 @@ from pydantic import BaseModel, Field
 class CaesarRequest(BaseModel):
     """Request body for Caesar cipher encrypt/decrypt operations."""
     text: str = Field(..., max_length=65536, description="The text to encrypt or decrypt")
-    shift: int = Field(default=3, description="Number of positions to shift (default: 3)")
+    shift: int = Field(default=3, ge=-1_000_000_000, le=1_000_000_000, description="Number of positions to shift (default: 3)")
     alphabet: str | None = Field(
         default=None,
+        max_length=256,
         description="Custom alphabet string (lowercase). Uses a-z if not provided."
     )
 
@@ -27,6 +28,7 @@ class VigenereRequest(BaseModel):
     text: str = Field(..., max_length=65536, description="The text to encrypt or decrypt")
     keyword: str = Field(
         default="cryptolab",
+        max_length=128,
         description="The keyword for encryption (default: 'cryptolab')"
     )
 
@@ -53,26 +55,26 @@ class RSAGenerateRequest(BaseModel):
 class RSAEncryptRequest(BaseModel):
     """Request body for RSA encryption."""
     text: str = Field(..., max_length=65536, description="The plaintext to encrypt")
-    public_key: str = Field(..., description="RSA public key in PEM format")
+    public_key: str = Field(..., max_length=32768, description="RSA public key in PEM format")
 
 
 class RSADecryptRequest(BaseModel):
     """Request body for RSA decryption."""
-    ciphertext: str = Field(..., description="Base64-encoded ciphertext")
-    private_key: str = Field(..., description="RSA private key in PEM format")
+    ciphertext: str = Field(..., max_length=8192, description="Base64-encoded ciphertext")
+    private_key: str = Field(..., max_length=32768, description="RSA private key in PEM format")
 
 
 class SignTextRequest(BaseModel):
     """Request body for signing text with RSA."""
     text: str = Field(..., max_length=65536, description="The text to sign")
-    private_key: str = Field(..., description="RSA private key in PEM format")
+    private_key: str = Field(..., max_length=32768, description="RSA private key in PEM format")
 
 
 class VerifyTextRequest(BaseModel):
     """Request body for verifying a text signature."""
     text: str = Field(..., max_length=65536, description="The original text that was signed")
-    signature: str = Field(..., description="Base64-encoded signature")
-    public_key: str = Field(..., description="RSA public key in PEM format")
+    signature: str = Field(..., max_length=8192, description="Base64-encoded signature")
+    public_key: str = Field(..., max_length=32768, description="RSA public key in PEM format")
 
 
 # ---------------------------------------------------------------------------
