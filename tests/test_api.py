@@ -249,3 +249,30 @@ class TestFileAPI:
         )
         assert ver.status_code == 200
         assert ver.json()["valid"] is True
+
+# ---------------------------------------------------------------------------
+# Resource / abuse boundaries (portfolio regression tests)
+# ---------------------------------------------------------------------------
+
+class TestResourceLimits:
+    def test_reject_oversized_rsa_key_generation(self, client):
+        """Avoid public API requests for extremely expensive RSA key sizes."""
+        response = client.post(
+            "/api/modern/rsa/generate-keys",
+            json={"key_size": 8192},
+        )
+        assert response.status_code == 422
+
+    @pytest.mark.parametrize("path,form", [
+        ("/api/files/hash", {}),
+        ("/api/files/sign", {"private_key": "placeholder"}),
+        ("/api/files/verify", {"public_key": "placeholder", "signature": "placeholder"}),
+    ])
+    def test_reject_oversized_uploads_before_crypto(self, client, path, form):
+        content = b"x" * (10 * 1024 * 1024 + 1)
+        response = client.post(
+            path, files={"file": ("too-large.bin", content, "application/octet-stream")},
+            data=form,
+        )
+        assert response.status_code == 413
+        assert "10 MiB" in response.json()["detail"]

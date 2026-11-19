@@ -22,6 +22,7 @@ from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
 # Minimum allowed key size for security
 MIN_KEY_SIZE = 2048
+MAX_KEY_SIZE = 4096
 
 # Standard public exponent for RSA
 PUBLIC_EXPONENT = 65537
@@ -53,6 +54,9 @@ def generate_keys(key_size: int = 2048) -> tuple[str, str]:
         raise ValueError(
             f"Key size must be at least {MIN_KEY_SIZE} bits, got: {key_size}"
         )
+
+    if key_size > MAX_KEY_SIZE:
+        raise ValueError(f"Key size must be at most {MAX_KEY_SIZE} bits, got: {key_size}")
 
     # Generate the private key
     private_key = rsa.generate_private_key(

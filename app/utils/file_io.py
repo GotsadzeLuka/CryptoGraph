@@ -6,7 +6,7 @@ application, primarily for processing uploaded files.
 """
 
 
-async def read_upload(file) -> bytes:
+async def read_upload(file, max_size_mb: int = 10) -> bytes:
     """
     Read the contents of an uploaded file.
 
@@ -16,7 +16,14 @@ async def read_upload(file) -> bytes:
     Returns:
         The raw bytes content of the file.
     """
-    return await file.read()
+    if max_size_mb <= 0:
+        raise ValueError('Maximum file size must be positive')
+    # Read no more than the allowed size plus one sentinel byte, so the
+    # handler never materializes an unbounded payload in application memory.
+    file_bytes = await file.read(max_size_mb * 1024 * 1024 + 1)
+    if not validate_file_size(file_bytes, max_size_mb=max_size_mb):
+        raise ValueError(f'File exceeds the {max_size_mb} MiB upload limit')
+    return file_bytes
 
 
 def validate_file_size(file_bytes: bytes, max_size_mb: int = 10) -> bool:

@@ -137,3 +137,8 @@ class TestRSAErrors:
         """Non-base64 ciphertext raises ValueError."""
         with pytest.raises(ValueError):
             decrypt("!!!not-base64!!!", self.private_pem)
+
+def test_generate_keys_rejects_excessive_key_size():
+    """Defense in depth: the library also bounds key generation."""
+    with pytest.raises(ValueError, match="at most 4096"):
+        generate_keys(key_size=8192)
