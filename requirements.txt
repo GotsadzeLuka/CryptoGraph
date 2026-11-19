@@ -1,7 +1,7 @@
 # Pinned direct dependencies; transitive dependency lock generation
 # requires a networked clean build environment.
 # PyCryptodome removed as unused after source/test import audit.
-cryptography==46.0.4
+cryptography==50.0.2
 fastapi==0.128.2
 uvicorn[standard]==0.48.0
 pydantic==2.13.5
