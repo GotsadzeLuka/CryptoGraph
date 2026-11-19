@@ -3,13 +3,14 @@ File upload API routes.
 
 Provides POST endpoints for file-based operations:
 SHA-256 file hashing and RSA file signing/verification.
-Files are processed in memory and not stored on the server.
+Files are processed in memory with a 10 MiB per-request upload cap and are not stored by the application.
 """
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from app.api.schemas import CryptoResponse, VerifyResponse
 from app.modern import hashing, signatures
+from app.utils.file_io import read_upload
 
 router = APIRouter(prefix="/api/files", tags=["File Operations"])
 
@@ -22,7 +23,10 @@ async def hash_file(file: UploadFile = File(...)) -> CryptoResponse:
     Accepts a file via multipart upload and returns its SHA-256 digest.
     The file is processed in memory and not stored on the server.
     """
-    file_bytes = await file.read()
+    try:
+        file_bytes = await read_upload(file)
+    except ValueError as exc:
+        raise HTTPException(status_code=413, detail=str(exc)) from exc
     result = hashing.hash_file(file_bytes)
 
     return CryptoResponse(
@@ -43,7 +47,10 @@ async def sign_file(
 
     Accepts a file and a private key, returns the base64-encoded signature.
     """
-    file_bytes = await file.read()
+    try:
+        file_bytes = await read_upload(file)
+    except ValueError as exc:
+        raise HTTPException(status_code=413, detail=str(exc)) from exc
 
     try:
         result = signatures.sign_data(file_bytes, private_key)
@@ -70,7 +77,10 @@ async def verify_file(
     Accepts a file, signature, and public key. Returns whether
     the signature is valid.
     """
-    file_bytes = await file.read()
+    try:
+        file_bytes = await read_upload(file)
+    except ValueError as exc:
+        raise HTTPException(status_code=413, detail=str(exc)) from exc
 
     try:
         valid = signatures.verify_signature(file_bytes, signature, public_key)

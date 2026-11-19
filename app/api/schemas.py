@@ -45,7 +45,8 @@ class RSAGenerateRequest(BaseModel):
     key_size: int = Field(
         default=2048,
         ge=2048,
-        description="RSA key size in bits (minimum: 2048)"
+        le=4096,
+        description="RSA key size in bits (2048 to 4096)"
     )
 
 
