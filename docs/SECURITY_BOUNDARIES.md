@@ -13,3 +13,5 @@ CryptoGraph is an **educational cryptography API**, not a key-management or secu
 ## Dependency supply chain
 
 `requirements.txt` pins the direct dependency set and removes unused PyCryptodome. CI performs dependency consistency and installed-environment vulnerability scanning. This is **not yet a fully hashed transitive lock**; the complete dependency graph must be resolved in a clean networked environment for both Python versions and committed only after verification.
+
+ASGI request middleware now caps actual received bytes, including requests with no Content-Length header; enforce proxy limits too.

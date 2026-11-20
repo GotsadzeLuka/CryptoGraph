@@ -75,3 +75,21 @@ def test_crypto_admission_control_refuses_overloaded_worker():
 
 def test_existing_openapi_remains_accessible(client):
     assert client.get("/openapi.json").status_code == 200
+
+
+@pytest.mark.parametrize("declared,status", [("abc",400), ("-1",400), (str(11*1024*1024),413)])
+def test_declared_body_limits(client, declared, status):
+    response = client.post("/api/modern/hash/sha256", content=b"x", headers={"content-length":declared})
+    assert response.status_code == status
+
+
+def test_streaming_body_without_content_length_is_capped(client):
+    # Generator uses Transfer-Encoding: chunked rather than Content-Length.
+    def streamed():
+        chunk = b"x" * (1024 * 1024)
+        for _ in range(12):
+            yield chunk
+
+    response = client.post("/api/modern/hash/sha256",
+        content=streamed(), headers={"content-type":"application/json"})
+    assert response.status_code == 413
