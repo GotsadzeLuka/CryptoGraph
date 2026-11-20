@@ -15,9 +15,11 @@ Security notes:
 """
 
 import base64
+import binascii
 
+from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import padding, utils
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
 
 def sign_data(data: bytes, private_key_pem: str) -> str:
@@ -49,8 +51,11 @@ def sign_data(data: bytes, private_key_pem: str) -> str:
             private_key_pem.encode("utf-8"),
             password=None,
         )
-    except Exception as e:
-        raise ValueError(f"Invalid private key PEM: {e}") from e
+    except (ValueError, TypeError) as exc:
+        raise ValueError("Invalid private key PEM.") from exc
+
+    if not isinstance(private_key, rsa.RSAPrivateKey) or not 2048 <= private_key.key_size <= 4096:
+        raise ValueError("A 2048-bit or stronger RSA private key is required.")
 
     signature = private_key.sign(
         data,
@@ -88,13 +93,18 @@ def verify_signature(
         public_key = serialization.load_pem_public_key(
             public_key_pem.encode("utf-8")
         )
-    except Exception as e:
-        raise ValueError(f"Invalid public key PEM: {e}") from e
+    except (ValueError, TypeError) as exc:
+        raise ValueError("Invalid public key PEM.") from exc
+
+    if not isinstance(public_key, rsa.RSAPublicKey) or not 2048 <= public_key.key_size <= 4096:
+        raise ValueError("A 2048-bit or stronger RSA public key is required.")
 
     try:
-        signature = base64.b64decode(signature_b64)
-    except Exception as e:
-        raise ValueError(f"Invalid base64 signature: {e}") from e
+        signature = base64.b64decode(signature_b64, validate=True)
+    except (binascii.Error, ValueError) as exc:
+        raise ValueError("Invalid base64 signature.") from exc
+    if len(signature) != public_key.key_size // 8:
+        raise ValueError("Signature length does not match the RSA key.")
 
     try:
         public_key.verify(
@@ -107,7 +117,7 @@ def verify_signature(
             hashes.SHA256(),
         )
         return True
-    except Exception:
+    except InvalidSignature:
         return False
 
 
