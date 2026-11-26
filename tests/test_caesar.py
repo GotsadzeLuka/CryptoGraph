@@ -6,7 +6,6 @@ custom shift values, case preservation, non-alphabet character handling,
 custom alphabet support, and edge cases.
 """
 
-import pytest
 from app.classical.caesar import encrypt, decrypt
 
 

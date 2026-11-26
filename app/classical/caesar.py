@@ -32,6 +32,9 @@ def _normalize_alphabet(alphabet: str | None) -> str:
     # ambiguous alphabet entries rather than silently corrupting ciphertext.
     if any(char.upper().lower() != char for char in lowered):
         raise ValueError("Custom alphabet contains ambiguous Unicode case mappings.")
+    cased = [char.upper() != char for char in lowered]
+    if any(cased) and not all(cased):
+        raise ValueError("Custom alphabet must use consistently cased or uncased letters.")
     if len(set(lowered)) != len(lowered):
         raise ValueError("Custom alphabet contains repeated letters (case-insensitive).")
     return lowered
@@ -110,13 +113,14 @@ def _apply_shift(text: str, shift: int, alphabet: str) -> str:
     """
     result = []
     alpha_len = len(alphabet)
+    positions = {letter: index for index, letter in enumerate(alphabet)}
 
     for char in text:
         lower_char = char.lower()
 
         # If the character is in our alphabet, shift it
-        if lower_char in alphabet:
-            idx = alphabet.index(lower_char)
+        if lower_char in positions and char in (lower_char, lower_char.upper()):
+            idx = positions[lower_char]
             new_idx = (idx + shift) % alpha_len
             new_char = alphabet[new_idx]
 

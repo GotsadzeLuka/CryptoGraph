@@ -41,7 +41,7 @@ async def hash_file(file: UploadFile = File(...)) -> CryptoResponse:
 @router.post("/sign", response_model=CryptoResponse)
 async def sign_file(
     file: UploadFile = File(...),
-    private_key: str = Form(..., description="RSA private key in PEM format"),
+    private_key: str = Form(..., max_length=32768, description="RSA private key in PEM format"),
 ) -> CryptoResponse:
     """
     Sign an uploaded file using RSA digital signature.
@@ -69,8 +69,8 @@ async def sign_file(
 @router.post("/verify", response_model=VerifyResponse)
 async def verify_file(
     file: UploadFile = File(...),
-    signature: str = Form(..., description="Base64-encoded signature"),
-    public_key: str = Form(..., description="RSA public key in PEM format"),
+    signature: str = Form(..., max_length=8192, description="Base64-encoded signature"),
+    public_key: str = Form(..., max_length=32768, description="RSA public key in PEM format"),
 ) -> VerifyResponse:
     """
     Verify an RSA signature against an uploaded file.

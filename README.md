@@ -27,17 +27,13 @@ CryptoGraph is a web-based learning tool for comparing historical ciphers with m
 **Key safety:** Caesar and Vigenère are intentionally insecure teaching examples. RSA keys are 2048–4096 bits, with disposable test keys recommended. The application does not offer end-to-end or zero-knowledge encryption.
 
 
-## Input-validation and resource limits (draft hardening PR)
+## API behavior and limits
 
-Classical ciphers handle non-Latin text deterministically without indexing errors, and reject ambiguous custom alphabets and non-ASCII Vigenère keywords. RSA endpoints reject wrong key types and malformed Base64 with controlled errors. Valid but incorrect RSA signatures return `valid=false`; unparseable signatures are rejected. RSA work is offloaded to a threadpool with a per-process, two-operation concurrency bound, and private-key-sensitive API responses disable caching.
-
-Text, key, alphabet and ciphertext fields have documented Pydantic limits; the app enforces a 10 MiB per-file read cap. The header-based request-size guard is **not** a complete streaming-body cap; public deployment also requires TLS, a reverse-proxy hard body limit, quotas and authenticated/rate-limited access. See [security boundaries](docs/SECURITY_BOUNDARIES.md).
-
-Direct Python dependencies are pinned and CI now includes Ruff and pip-audit, but a **full hashed transitive lock remains pending**. Python 3.12 and 3.13 test runs must be observed to complete; GitHub-hosted jobs are currently failing before executing steps. The educational demo remains offline and cannot be described as a secure production cryptographic service.
+The API preserves letters outside the selected alphabet, validates custom alphabets and uses standardized RSA-OAEP and RSA-PSS implementations. Malformed keys and signatures receive controlled responses. Payloads up to 10 MiB per uploaded file are supported, including requests sent in chunks. RSA work runs on a two-slot executor per process, and validation errors omit submitted values. [Security boundaries](docs/SECURITY_BOUNDARIES.md)
 
 ## Quick start
 
-Requires **Python 3.12+**. No database, cloud account or environment secrets are needed for local development.
+Use **Python 3.12 or 3.13**. No database, cloud account or environment secrets are needed for local development.
 
 ```bash
 git clone https://github.com/GotsadzeLuka/CryptoGraph.git
@@ -45,7 +41,7 @@ cd CryptoGraph
 python -m venv .venv
 source .venv/bin/activate            # macOS / Linux
 # .venv\Scripts\Activate.ps1         # Windows PowerShell
-python -m pip install -r requirements.txt
+python -m pip install --require-hashes -r requirements.txt
 python -m uvicorn main:app --reload
 ```
 
@@ -76,12 +72,15 @@ For all 14 documented API endpoints and request fields, see the **[API reference
 ## Tests and quality checks
 
 ```bash
-python -m pytest -v tests/
+python -m pip install --require-hashes -r requirements.txt -r requirements-dev.txt
+python -m ruff check app tests main.py
+python -m pytest -q tests/
+python -m pip_audit --require-hashes -r requirements.txt -r requirements-dev.txt
 python -m compileall -q app main.py
 python -m pip check
 ```
 
-The tests cover cipher round trips, RSA key operations, signatures, hashing and FastAPI endpoint behavior, including invalid inputs and resource limits. The [CI workflow](.github/workflows/ci.yml) runs across Python 3.12 and 3.13. **Consult GitHub Actions for actual execution status; the presence of CI configuration alone does not mean tests pass.**
+The tests cover cipher round trips, RSA key operations, signatures, hashing and FastAPI endpoint behavior, including invalid inputs and resource limits. The [CI workflow](.github/workflows/ci.yml) runs across Python 3.12 and 3.13. The workflow also builds the container and checks its health endpoint.
 
 ## Architecture
 
@@ -110,7 +109,7 @@ See the [architecture documentation](docs/ARCHITECTURE.md) for data flow and tru
 
 ```bash
 docker build -t cryptograph .
-docker run --rm -p 8000:8000 cryptograph
+docker run --rm -p 127.0.0.1:8000:8000 cryptograph
 ```
 
 **Hosted demo status: offline.** The former Vercel deployment is no longer available. Reviewers should run CryptoGraph locally using the Quick Start or Docker instructions above; there is no active public demo URL. `render.yaml` is retained only as an optional deployment configuration example. The unauthenticated API requires additional hardening before any public production use.

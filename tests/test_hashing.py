@@ -9,7 +9,6 @@ text and file hashing of the same content.
 import os
 import hashlib
 
-import pytest
 from app.modern.hashing import hash_text, hash_file
 
 

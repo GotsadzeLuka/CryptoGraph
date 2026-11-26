@@ -56,7 +56,7 @@ CryptoGraph is a single Python service serving static web assets and stateless c
 - RSA key generation is restricted to 2048–4096 bits; excessive key-size requests fail validation.
 - File endpoints read at most 10 MiB plus one sentinel byte, returning HTTP 413 on oversized files.
 - Other routes lack global body-size limits and there are no quotas or authentication.
-- RSA is CPU-intensive and cryptographic functions in async endpoints are synchronous; a heavily loaded service needs worker and abuse-control design.
+- RSA routes offload work to a dedicated two-thread executor. A cancelled request holds its slot until the worker finishes.
 - No database, rate limiter, structured production telemetry or recovery programme.
 - Dependencies specify minimum versions, not a fixed lockfile.
 - Docker and Render configuration exist but live hosting is not guaranteed.

@@ -3,6 +3,7 @@ import asyncio
 from threading import Event, Lock
 
 import pytest
+from httpx2 import ASGITransport, AsyncClient
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
@@ -67,14 +68,43 @@ def test_crypto_admission_control_refuses_overloaded_worker():
             with pytest.raises(HTTPException) as exc:
                 await run_limited_crypto(expensive)
             assert exc.value.status_code == 429
+            first.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await first
+            with pytest.raises(HTTPException) as active_work:
+                await run_limited_crypto(expensive)
+            assert active_work.value.status_code == 429
         finally:
             blocked.set()
-            await asyncio.gather(first, second)
+            await asyncio.gather(first, second, return_exceptions=True)
     asyncio.run(scenario())
 
 
 def test_existing_openapi_remains_accessible(client):
     assert client.get("/openapi.json").status_code == 200
+
+
+def test_validation_response_omits_submitted_private_key(client):
+    sample = "disposable-test-input-" * 2000
+    response = client.post("/api/modern/rsa/sign", json={"text": "sample", "private_key": sample})
+
+    assert response.status_code == 422
+    assert response.headers["cache-control"] == "no-store"
+    assert response.json()["detail"][0]["loc"] == ["body", "private_key"]
+    assert "disposable-test-input" not in response.text
+
+
+@pytest.mark.parametrize("size, expected_status", [
+    (10 * 1024 * 1024 - 1, 200),
+    (10 * 1024 * 1024, 200),
+    (10 * 1024 * 1024 + 1, 413),
+])
+def test_multipart_file_size_boundary(client, size, expected_status):
+    file_data = b"x" * size
+    response = client.post("/api/files/hash", files={"file": ("sample.bin", file_data)})
+    assert response.status_code == expected_status
+    if expected_status == 200:
+        assert response.json()["result"] == hashing.hash_file(file_data)
 
 
 @pytest.mark.parametrize("declared,status", [("abc",400), ("-1",400), (str(11*1024*1024),413)])
@@ -83,13 +113,19 @@ def test_declared_body_limits(client, declared, status):
     assert response.status_code == status
 
 
-def test_streaming_body_without_content_length_is_capped(client):
-    # Generator uses Transfer-Encoding: chunked rather than Content-Length.
-    def streamed():
-        chunk = b"x" * (1024 * 1024)
-        for _ in range(12):
-            yield chunk
+def test_streaming_body_without_content_length_is_capped():
+    async def scenario():
+        async def streamed():
+            for _ in range(12):
+                yield b"x" * (1024 * 1024)
 
-    response = client.post("/api/modern/hash/sha256",
-        content=streamed(), headers={"content-type":"application/json"})
-    assert response.status_code == 413
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                "/api/modern/hash/sha256",
+                content=streamed(),
+                headers={"content-type": "application/json"},
+            )
+        assert response.status_code == 413
+        assert "content-length" not in response.request.headers
+
+    asyncio.run(scenario())

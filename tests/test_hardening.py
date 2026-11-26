@@ -34,6 +34,13 @@ def test_unicode_plaintext_is_preserved_without_consuming_keyword():
     assert caesar.encrypt("AéB-🙂") == "DéE-🙂"
 
 
+def test_caesar_preserves_letters_outside_the_chosen_alphabet():
+    assert caesar.encrypt("K K", shift=1) == "K L"
+    assert caesar.encrypt("一二三", shift=1, alphabet="一二三") == "二三一"
+    with pytest.raises(ValueError, match="consistently cased or uncased"):
+        caesar.encrypt("A", shift=1, alphabet="a一")
+
+
 @pytest.mark.parametrize("keyword", ["", "é", "κey", "abc1", "a b"])
 def test_vigenere_rejects_non_ascii_keywords(keyword):
     with pytest.raises(ValueError):
