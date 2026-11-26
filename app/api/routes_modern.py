@@ -6,6 +6,7 @@ RSA encryption/decryption, and RSA digital signatures.
 """
 
 from fastapi import APIRouter, HTTPException
+from app.api.crypto_limits import run_limited_crypto
 
 from app.api.schemas import (
     HashRequest,
@@ -49,8 +50,8 @@ async def rsa_generate_keys(
 ) -> RSAKeyResponse:
     """Generate an RSA key pair."""
     try:
-        private_pem, public_pem = rsa_crypto.generate_keys(
-            key_size=request.key_size,
+        private_pem, public_pem = await run_limited_crypto(
+            rsa_crypto.generate_keys, key_size=request.key_size,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -70,7 +71,7 @@ async def rsa_generate_keys(
 async def rsa_encrypt(request: RSAEncryptRequest) -> CryptoResponse:
     """Encrypt text using an RSA public key."""
     try:
-        result = rsa_crypto.encrypt(
+        result = await run_limited_crypto(rsa_crypto.encrypt,
             plaintext=request.text,
             public_key_pem=request.public_key,
         )
@@ -89,7 +90,7 @@ async def rsa_encrypt(request: RSAEncryptRequest) -> CryptoResponse:
 async def rsa_decrypt(request: RSADecryptRequest) -> CryptoResponse:
     """Decrypt RSA ciphertext using a private key."""
     try:
-        result = rsa_crypto.decrypt(
+        result = await run_limited_crypto(rsa_crypto.decrypt,
             ciphertext_b64=request.ciphertext,
             private_key_pem=request.private_key,
         )
@@ -112,7 +113,7 @@ async def rsa_decrypt(request: RSADecryptRequest) -> CryptoResponse:
 async def rsa_sign_text(request: SignTextRequest) -> CryptoResponse:
     """Sign text using an RSA private key."""
     try:
-        result = signatures.sign_text(
+        result = await run_limited_crypto(signatures.sign_text,
             text=request.text,
             private_key_pem=request.private_key,
         )
@@ -131,7 +132,7 @@ async def rsa_sign_text(request: SignTextRequest) -> CryptoResponse:
 async def rsa_verify_text(request: VerifyTextRequest) -> VerifyResponse:
     """Verify an RSA signature against text."""
     try:
-        valid = signatures.verify_text(
+        valid = await run_limited_crypto(signatures.verify_text,
             text=request.text,
             signature_b64=request.signature,
             public_key_pem=request.public_key,

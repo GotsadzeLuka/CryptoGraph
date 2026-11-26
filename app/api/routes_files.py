@@ -7,6 +7,7 @@ Files are processed in memory with a 10 MiB per-request upload cap and are not s
 """
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from app.api.crypto_limits import run_limited_crypto
 
 from app.api.schemas import CryptoResponse, VerifyResponse
 from app.modern import hashing, signatures
@@ -40,7 +41,7 @@ async def hash_file(file: UploadFile = File(...)) -> CryptoResponse:
 @router.post("/sign", response_model=CryptoResponse)
 async def sign_file(
     file: UploadFile = File(...),
-    private_key: str = Form(..., description="RSA private key in PEM format"),
+    private_key: str = Form(..., max_length=32768, description="RSA private key in PEM format"),
 ) -> CryptoResponse:
     """
     Sign an uploaded file using RSA digital signature.
@@ -53,7 +54,7 @@ async def sign_file(
         raise HTTPException(status_code=413, detail=str(exc)) from exc
 
     try:
-        result = signatures.sign_data(file_bytes, private_key)
+        result = await run_limited_crypto(signatures.sign_data, file_bytes, private_key)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -68,8 +69,8 @@ async def sign_file(
 @router.post("/verify", response_model=VerifyResponse)
 async def verify_file(
     file: UploadFile = File(...),
-    signature: str = Form(..., description="Base64-encoded signature"),
-    public_key: str = Form(..., description="RSA public key in PEM format"),
+    signature: str = Form(..., max_length=8192, description="Base64-encoded signature"),
+    public_key: str = Form(..., max_length=32768, description="RSA public key in PEM format"),
 ) -> VerifyResponse:
     """
     Verify an RSA signature against an uploaded file.
@@ -83,7 +84,7 @@ async def verify_file(
         raise HTTPException(status_code=413, detail=str(exc)) from exc
 
     try:
-        valid = signatures.verify_signature(file_bytes, signature, public_key)
+        valid = await run_limited_crypto(signatures.verify_signature, file_bytes, signature, public_key)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

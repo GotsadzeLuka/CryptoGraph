@@ -5,7 +5,10 @@ Creates and configures the CryptoGraph API application,
 including router registration and health check endpoint.
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from starlette.middleware.base import RequestResponseEndpoint
 
 from app.api.routes_classical import router as classical_router
 from app.api.routes_modern import router as modern_router
@@ -29,7 +32,31 @@ def create_app() -> FastAPI:
             "and RSA digital signatures."
         ),
         version="1.0.0",
+        max_body_size=10 * 1024 * 1024 + 64 * 1024,
+        form_limits={"max_files": 1, "max_fields": 2, "max_part_size": 32768},
     )
+
+    @app.middleware("http")
+    async def request_safety(request: Request, call_next: RequestResponseEndpoint):
+        lengths = request.headers.getlist("content-length")
+        if lengths and (len(lengths) != 1 or not lengths[0].isascii() or not lengths[0].isdigit()):
+            response = JSONResponse({"detail": "Invalid Content-Length"}, status_code=400)
+        else:
+            response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        if request.method == "POST":
+            response.headers["Cache-Control"] = "no-store"
+        return response
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_error(_request: Request, error: RequestValidationError):
+        # Validation errors can carry the submitted text or private PEM in
+        # input/ctx. Keep the useful field locations and omit request values.
+        detail = [
+            {field: issue[field] for field in ("type", "loc", "msg")}
+            for issue in error.errors()
+        ]
+        return JSONResponse({"detail": detail}, status_code=422)
 
     # Register API routers
     app.include_router(classical_router)

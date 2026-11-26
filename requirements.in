@@ -1,0 +1,5 @@
+cryptography==50.0.2
+fastapi==0.165.0
+pydantic==2.13.5
+python-multipart==0.0.34
+uvicorn==0.48.0

@@ -11,7 +11,7 @@ git clone https://github.com/GotsadzeLuka/CryptoGraph.git
 cd CryptoGraph
 python -m venv .venv
 source .venv/bin/activate     # or activate the venv on Windows
-python -m pip install -r requirements.txt
+python -m pip install --require-hashes -r requirements.txt -r requirements-dev.txt
 python -m uvicorn main:app --reload
 ```
 
